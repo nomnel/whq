@@ -1,0 +1,11 @@
+# Build artifacts
+/whq
+whq.exe
+whq.dSYM/
+
+# Local smoke test worktrees
+.whq-smoke/
+
+# macOS
+.DS_Store
+
