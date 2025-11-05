@@ -129,6 +129,16 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
 - Description: Prints the absolute path to the repository’s worktrees root under
   `WHQ_ROOT`: `repo_whq_root`.
 
+## whq version
+
+- Synopsis: `whq version`
+- Description: Prints the CLI version string to stdout. The default build value
+  is `v0.0.2` and can be overridden at build time via
+  `-ldflags "-X main.version=<value>"`.
+- Output: Version string only (no prefix text), with a trailing newline.
+- Errors:
+  - Any arguments present: print `Usage: whq version` and exit non-zero.
+
 ## whq help
 
 - Synopsis: `whq help`
@@ -144,8 +154,8 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
 
 - CLI framework:
   - Use `spf13/cobra` to implement the `whq` command with subcommands (`add`,
-    `path`, `list`, `ls` alias, `rm`, `prune`, `root`, and `help`). Cobra
-    handles argument/flag parsing, usage, and `-h/--help` output.
+    `path`, `list`, `ls` alias, `rm`, `prune`, `root`, `version`, and `help`).
+    Cobra handles argument/flag parsing, usage, and `-h/--help` output.
   - Optionally, leverage Cobra’s completion generation to provide shell
     completion scripts.
 - Detection of `repo_root`:
