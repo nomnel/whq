@@ -241,6 +241,10 @@ var addCmd = &cobra.Command{
 			return fmt.Errorf("")
 		}
 
+		if err := runPostAddActions(env.RepoRoot, dest); err != nil {
+			return err
+		}
+
 		fmt.Fprintf(os.Stdout, "Created worktree: %s\n", dest)
 		return nil
 	},

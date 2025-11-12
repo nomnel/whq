@@ -94,101 +94,60 @@ whqcd() { cd "$(whq path "${1:-@}")"; }
 
 See `spec.md` for the full specification and implementation details.
 
-## Git hook: post-checkout (optional)
+## Post-add automation (`.whq.json`)
 
-This repository’s `whq` CLI is designed to manage external worktrees. If you
-want new worktrees to auto-initialize (e.g., copy some dotfiles and run setup
-commands), you can install the following `post-checkout` hook in another
-repository that uses `whq`-managed worktrees.
+`whq add` natively supports repository-specific setup steps driven by a JSON
+file in the repo root. When `.whq.json` is missing the behavior is identical to
+previous releases (silent no-op).
 
-Notes:
+### Schema
 
-- The hook runs only when `PWD` is under the repository’s `whq` root:
-  `$(whq root)/*` (i.e., `WHQ_ROOT/<host>/<owner>/<project>/*`).
-- It copies selected files from the main worktree (printed by `whq path @`) into
-  the newly checked-out worktree, then runs optional setup commands.
-- If `whq` is not available or the repository cannot be identified, the hook
-  exits silently and does nothing.
-
-### Setup
-
-1. Install `whq` and ensure it’s on your `PATH`.
-2. In the target repository (not this repo), save the script below as
-   `.git/hooks/post-checkout`.
-3. Make it executable: `chmod +x .git/hooks/post-checkout`.
-4. Optionally customize `FILES_TO_COPY` and `COMMANDS` in the script.
-
-### Script (.git/hooks/post-checkout)
-
-```zsh
-#!/usr/bin/env zsh
-# post-checkout hook for whq-managed external worktrees
-# - Runs only when $PWD is under "$(whq root)/*"
-# - Copies selected files from the main worktree into the new worktree
-# - Optionally runs per-worktree setup commands
-
-set -u  # treat unset variables as an error; disable if undesired
-
-# Ensure whq is available and the repo is recognized
-if ! command -v whq >/dev/null 2>&1; then
-  # whq is not available; do nothing
-  exit 0
-fi
-
-# Repository's whq root (e.g., $WHQ_ROOT/<host>/<owner>/<project>)
-repo_whq_root="$(whq root 2>/dev/null || true)"
-if [[ -z "${repo_whq_root:-}" ]]; then
-  # Not inside a recognizable repository; do nothing
-  exit 0
-fi
-
-# Run only for whq-managed additional worktrees (usually excludes the main one)
-case "$PWD" in
-  "${repo_whq_root}"/*) ;;
-  *) exit 0 ;;
-esac
-
-# Main worktree root ("@")
-repo_root="$(whq path @ 2>/dev/null || true)"
-if [[ -z "${repo_root:-}" ]]; then
-  # Fallback: derive from the common git dir if possible
-  if common_git_dir="$(git rev-parse --git-common-dir 2>/dev/null)"; then
-    repo_root="${common_git_dir%/.git}"
-  fi
-fi
-
-# If still unknown, skip any further actions
-[[ -n "${repo_root:-}" ]] || exit 0
-
-# --------- customize below ---------
-# Files/directories to copy from the main worktree to the new worktree root
-typeset -a FILES_TO_COPY
-FILES_TO_COPY=(
-  ".env"
-  ".claude/settings.local.json"
-)
-
-# Commands to run in the new worktree (executed in order via eval)
-typeset -a COMMANDS
-COMMANDS=(
-  "command -v pnpm   >/dev/null 2>&1 && pnpm install || true"
-)
-# -----------------------------------
-
-# Copy files/directories if they exist
-for f in "${FILES_TO_COPY[@]}"; do
-  src="${repo_root%/}/$f"
-  dest="${PWD%/}/$f"
-  if [[ -e "$src" ]]; then
-    mkdir -p -- "$(dirname -- "$dest")"
-    cp -R -- "$src" "$dest"
-  fi
-done
-
-# Run setup commands inside the new worktree
-for c in "${COMMANDS[@]}"; do
-  ( cd "$PWD" && eval "$c" )
-done
-
-exit 0
+```json
+{
+  "post_add": {
+    "copy": [
+      ".env.example",
+      "config/local/",
+      "scripts/setup.sh"
+    ],
+    "commands": [
+      "pnpm install",
+      "mise run bootstrap"
+    ]
+  }
+}
 ```
+
+- `copy`: relative paths (files or directories) resolved from the repo root.
+  Each entry is copied into the new worktree using the same relative path. The
+  destination is overwritten if it already exists.
+- `commands`: shell snippets executed via `bash -lc` inside the new worktree.
+  Commands run sequentially and inherit the parent stdout/stderr streams.
+
+### Execution & output
+
+- `.whq.json` is read only from the repository root; no env overrides or parent
+  lookups.
+- Post-add processing runs immediately after `git worktree add` succeeds and
+  before `Created worktree: <path>` is printed.
+- Copy steps run before commands. Any failure aborts the remaining steps and
+  makes `whq add` fail.
+- Sample log lines:
+
+```text
+Post-add (.whq.json): starting (copy=2, commands=1)
+Post-add copy: .env.example
+Post-add cmd 1/1: pnpm install
+Post-add (.whq.json): completed
+```
+
+- If automation succeeds the final confirmation line still prints. On failure,
+  no summary is printed and the error is surfaced to stderr.
+
+### Validation checklist
+
+1. Create `.whq.json` in your repo root using the schema above.
+2. Run `whq add demo-post-add`.
+3. Confirm the copied files exist under the new worktree and that the expected
+   command side effects (e.g., generated files) are present.
+4. Review the stdout log to ensure the sequence matches the sample output.
