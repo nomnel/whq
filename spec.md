@@ -41,6 +41,9 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
 - Side effects:
   - `whq add` runs `git worktree add` and thereby triggers standard Git hooks in
     the created worktree.
+  - After `git worktree add` succeeds, the command checks for `.whq.json` in the
+    repository root and, if present, executes the post-add pipeline described
+    below.
 
 ## whq add
 
@@ -56,11 +59,63 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
     existing) the new branch.
 - Options: (none)
 - Output:
-  - On success: `Created worktree: <dest>`.
+  - When `.whq.json` is absent or empty, behavior matches earlier versions:
+    only `Created worktree: <dest>` is printed.
+  - When post-add steps exist, print the following in order:
+    - `Post-add (.whq.json): starting (copy=<n>, commands=<m>)`
+    - One line per copy entry: `Post-add copy: <relative-path>`
+    - One line per command: `Post-add cmd <i>/<total>: <command>`
+    - `Post-add (.whq.json): completed`
+    - `Created worktree: <dest>`
+  - On any post-add failure (missing source, copy error, command exit), abort
+    the sequence, surface the error, and skip the final summary line.
 - Errors:
   - Missing `<branch>`: print `Usage: whq add <branch>` and exit non-zero.
   - Any failure from `git worktree add` should cause a non-zero exit; surface
     Git’s error output.
+  - Post-add failures bubble up with context (e.g., `whq: failed to copy` or
+    `whq: post-add command failed (...)`) and cause the command to exit non-zero.
+    When a post-add step fails, the CLI automatically runs the equivalent of
+    `whq rm -b <branch>` to clean up the new worktree; the branch deletion only
+    occurs if the branch was created by this `whq add` execution.
+
+### Post-add automation (`.whq.json`)
+
+- Location: repository root only. No parent traversal and no environment
+  overrides.
+- Schema:
+
+```json
+{
+  "post_add": {
+    "copy": ["relative/path", "dir/"],
+    "commands": ["pnpm install", "mise run bootstrap"]
+  }
+}
+```
+
+- Copy rules:
+  - Entries are relative paths rooted at the repository root; absolute paths or
+    paths escaping the root cause validation errors.
+  - Files, directories, and symlinks are supported. Directories are copied
+    recursively. Targets in the new worktree are overwritten (`rm -rf` style)
+    before copying.
+- Command rules:
+  - Commands are executed via `bash -lc` with the new worktree root as `cwd`.
+  - Each command inherits stdout/stderr so the user can observe the output.
+- Execution order:
+  1. `git worktree add` finishes successfully.
+  2. Copy entries run sequentially; any failure aborts the pipeline.
+  3. Commands run sequentially; any failure aborts the pipeline.
+  4. Upon success the CLI prints the completion summary followed by
+     `Created worktree: <dest>`.
+- Absence of `.whq.json` or missing `post_add` block results in a silent no-op,
+  preserving the original UX.
+- Failure handling:
+  - If any copy or command step fails, the CLI attempts to remove the newly
+    created worktree via `git worktree remove` and, when the branch was created
+    by this invocation, deletes it using `git branch -d` (fallback `-D`). Errors
+    from the cleanup step are appended to the original failure message.
 
 ## whq path
 
