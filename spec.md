@@ -221,7 +221,7 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
 
 - Synopsis: `whq version`
 - Description: Prints the CLI version string to stdout. The default build value
-  is `v0.0.3` and can be overridden at build time via
+ is `v0.0.4` and can be overridden at build time via
   `-ldflags "-X main.version=<value>"`.
 - Output: Version string only (no prefix text), with a trailing newline.
 - Errors:
