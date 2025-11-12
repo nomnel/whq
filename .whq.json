@@ -1,0 +1,10 @@
+{
+    "post_add": {
+        "copy": [
+            "issues/"
+        ],
+        "commands": [
+            "mise trust"
+        ]
+    }
+}
