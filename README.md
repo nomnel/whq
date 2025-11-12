@@ -143,6 +143,10 @@ Post-add (.whq.json): completed
 
 - If automation succeeds the final confirmation line still prints. On failure,
   no summary is printed and the error is surfaced to stderr.
+- When post-add fails, `whq` automatically calls the equivalent of
+  `whq rm -b <branch>` to delete the just-created worktree. The branch is
+  deleted only when it was created by this `whq add` invocation; existing
+  branches are preserved while their failed worktrees are removed.
 
 ### Validation checklist
 

@@ -75,6 +75,9 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
     Git’s error output.
   - Post-add failures bubble up with context (e.g., `whq: failed to copy` or
     `whq: post-add command failed (...)`) and cause the command to exit non-zero.
+    When a post-add step fails, the CLI automatically runs the equivalent of
+    `whq rm -b <branch>` to clean up the new worktree; the branch deletion only
+    occurs if the branch was created by this `whq add` execution.
 
 ### Post-add automation (`.whq.json`)
 
@@ -108,6 +111,11 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
      `Created worktree: <dest>`.
 - Absence of `.whq.json` or missing `post_add` block results in a silent no-op,
   preserving the original UX.
+- Failure handling:
+  - If any copy or command step fails, the CLI attempts to remove the newly
+    created worktree via `git worktree remove` and, when the branch was created
+    by this invocation, deletes it using `git branch -d` (fallback `-D`). Errors
+    from the cleanup step are appended to the original failure message.
 
 ## whq path
 

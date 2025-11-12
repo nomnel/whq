@@ -242,6 +242,9 @@ var addCmd = &cobra.Command{
 		}
 
 		if err := runPostAddActions(env.RepoRoot, dest); err != nil {
+			if cleanupErr := cleanupFailedAdd(env.RepoRoot, dest, branch, !exists); cleanupErr != nil {
+				return fmt.Errorf("%w; cleanup failed: %v", err, cleanupErr)
+			}
 			return err
 		}
 
@@ -329,34 +332,13 @@ var rmCmd = &cobra.Command{
 		branch := args[0]
 		dest := filepath.Join(env.RepoWHQRoot, branch)
 
-		argsWT := []string{"worktree", "remove"}
-		if rmForce {
-			argsWT = append(argsWT, "--force")
-		}
-		argsWT = append(argsWT, dest)
-		c := exec.Command("git", argsWT...)
-		c.Dir = env.RepoRoot
-		c.Stdout = os.Stdout
-		c.Stderr = os.Stderr
-		if err := c.Run(); err != nil {
+		if err := removeWorktree(env.RepoRoot, dest, rmForce); err != nil {
 			return fmt.Errorf("")
 		}
 
 		if rmBranch {
-			// Try -d first
-			cb := exec.Command("git", "branch", "-d", branch)
-			cb.Dir = env.RepoRoot
-			cb.Stdout = os.Stdout
-			cb.Stderr = os.Stderr
-			if err := cb.Run(); err != nil {
-				// Fallback to -D
-				cb2 := exec.Command("git", "branch", "-D", branch)
-				cb2.Dir = env.RepoRoot
-				cb2.Stdout = os.Stdout
-				cb2.Stderr = os.Stderr
-				if err2 := cb2.Run(); err2 != nil {
-					return fmt.Errorf("")
-				}
+			if err := deleteBranch(env.RepoRoot, branch); err != nil {
+				return fmt.Errorf("")
 			}
 		}
 		return nil
@@ -450,4 +432,34 @@ func tryRel(base, target string) string {
 		return ""
 	}
 	return rel
+}
+
+func removeWorktree(repoRoot, worktreePath string, force bool) error {
+	argsWT := []string{"worktree", "remove"}
+	if force {
+		argsWT = append(argsWT, "--force")
+	}
+	argsWT = append(argsWT, worktreePath)
+	c := exec.Command("git", argsWT...)
+	c.Dir = repoRoot
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+	return c.Run()
+}
+
+func deleteBranch(repoRoot, branch string) error {
+	cb := exec.Command("git", "branch", "-d", branch)
+	cb.Dir = repoRoot
+	cb.Stdout = os.Stdout
+	cb.Stderr = os.Stderr
+	if err := cb.Run(); err != nil {
+		cb2 := exec.Command("git", "branch", "-D", branch)
+		cb2.Dir = repoRoot
+		cb2.Stdout = os.Stdout
+		cb2.Stderr = os.Stderr
+		if err2 := cb2.Run(); err2 != nil {
+			return err2
+		}
+	}
+	return nil
 }

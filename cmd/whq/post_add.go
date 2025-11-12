@@ -231,3 +231,20 @@ func copyFile(src, dest string, perm fs.FileMode) error {
 	}
 	return nil
 }
+
+func cleanupFailedAdd(repoRoot, worktreeRoot, branch string, removeBranch bool) error {
+	fmt.Fprintf(os.Stderr, "Post-add failed: removing worktree %s\n", worktreeRoot)
+
+	if err := removeWorktree(repoRoot, worktreeRoot, false); err != nil {
+		return fmt.Errorf("whq: cleanup failed while removing worktree: %w", err)
+	}
+	_ = os.RemoveAll(worktreeRoot)
+
+	if removeBranch {
+		fmt.Fprintf(os.Stderr, "Post-add failed: deleting branch %s\n", branch)
+		if err := deleteBranch(repoRoot, branch); err != nil {
+			return fmt.Errorf("whq: cleanup failed while deleting branch: %w", err)
+		}
+	}
+	return nil
+}
