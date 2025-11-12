@@ -45,6 +45,39 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
     repository root and, if present, executes the post-add pipeline described
     below.
 
+## whq init
+
+- Synopsis: `whq init [--force]`
+- Description:
+  - Generates a `.whq.json` template in the repository root using a fixed
+    two-space-indented JSON structure with `post_add.copy` and
+    `post_add.commands` keys. Both arrays start empty so running `whq add`
+    immediately after `whq init` remains a no-op.
+  - The command requires a Git repository context (same preconditions as other
+    subcommands) and operates on `repo_root/.whq.json`.
+  - Template contents:
+
+```json
+{
+  "post_add": {
+    "copy": [],
+    "commands": []
+  }
+}
+```
+- Options:
+  - `-f`, `--force`: Overwrite an existing `.whq.json`.
+- Output:
+  - On success, print `Created .whq.json` to stdout.
+  - When overwriting due to `--force`, also print
+    `Overwriting existing .whq.json (--force)` to stderr.
+  - If the file already exists and `--force` is not provided, print a stderr
+    line explaining that the existing file was kept and exit non-zero.
+- Errors:
+  - Extra arguments: `Usage: whq init`.
+  - Filesystem failures bubble up with context (e.g., `whq: failed to write
+    .whq.json: ...`).
+
 ## whq add
 
 - Synopsis: `whq add <branch>`

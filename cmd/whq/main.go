@@ -45,6 +45,7 @@ var (
 func main() {
 	// Subcommands
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(pathCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(lsCmd) // alias

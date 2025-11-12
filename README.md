@@ -22,6 +22,10 @@ Ensure `git` is available on your `PATH`.
 
 ## Quick Start
 
+- Create the default `.whq.json` template for post-add automation:
+  - `whq init` (use `--force` to overwrite an existing file). The generated
+    `copy`/`commands` arrays are empty so `whq add` keeps its no-op behavior
+    until you customize them.
 - Create a worktree for a branch (creates the branch if it does not exist):
   - `whq add feature-123`
 - Jump to a worktree directory:
@@ -51,6 +55,11 @@ Ensure `git` is available on your `PATH`.
 
 ## Commands
 
+- `whq init [--force]`: Generate a `.whq.json` template in the repository root.
+  - Default template keeps both `copy` and `commands` empty arrays so existing
+    workflows remain unaffected until edited.
+  - When the file already exists, the command aborts without overwriting unless
+    `--force` is specified (stderr explains what was skipped).
 - `whq add <branch>`: Create `repo_whq_root/<branch>` worktree; creates branch
   from HEAD if missing.
 - `whq path <branch|@>`: Print absolute path to a worktree, or `repo_root` for
@@ -97,8 +106,11 @@ See `spec.md` for the full specification and implementation details.
 ## Post-add automation (`.whq.json`)
 
 `whq add` natively supports repository-specific setup steps driven by a JSON
-file in the repo root. When `.whq.json` is missing the behavior is identical to
-previous releases (silent no-op).
+file in the repo root. Run `whq init` once to scaffold the template (add
+`--force` to regenerate). The scaffold keeps both arrays empty so `whq add`
+still behaves exactly like prior versions until you populate the lists. When
+`.whq.json` is missing the behavior is identical to previous releases (silent
+no-op).
 
 ### Schema
 
