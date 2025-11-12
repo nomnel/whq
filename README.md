@@ -63,7 +63,7 @@ Ensure `git` is available on your `PATH`.
   also delete the local branch (`-d`, fallback to `-D`).
 - `whq prune`: Run `git worktree prune`.
 - `whq root`: Print `repo_whq_root`.
-- `whq version`: Print the CLI version string (current default `v0.0.2`,
+- `whq version`: Print the CLI version string (current default `v0.0.3`,
   overridable via `-ldflags`).
 
 ## Notes

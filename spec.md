@@ -59,8 +59,8 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
     existing) the new branch.
 - Options: (none)
 - Output:
-  - When `.whq.json` is absent or empty, behavior matches earlier versions:
-    only `Created worktree: <dest>` is printed.
+  - When `.whq.json` is absent or empty, behavior matches earlier versions: only
+    `Created worktree: <dest>` is printed.
   - When post-add steps exist, print the following in order:
     - `Post-add (.whq.json): starting (copy=<n>, commands=<m>)`
     - One line per copy entry: `Post-add copy: <relative-path>`
@@ -74,10 +74,10 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
   - Any failure from `git worktree add` should cause a non-zero exit; surface
     Git’s error output.
   - Post-add failures bubble up with context (e.g., `whq: failed to copy` or
-    `whq: post-add command failed (...)`) and cause the command to exit non-zero.
-    When a post-add step fails, the CLI automatically runs the equivalent of
-    `whq rm -b <branch>` to clean up the new worktree; the branch deletion only
-    occurs if the branch was created by this `whq add` execution.
+    `whq: post-add command failed (...)`) and cause the command to exit
+    non-zero. When a post-add step fails, the CLI automatically runs the
+    equivalent of `whq rm -b <branch>` to clean up the new worktree; the branch
+    deletion only occurs if the branch was created by this `whq add` execution.
 
 ### Post-add automation (`.whq.json`)
 
@@ -188,7 +188,7 @@ Unless otherwise stated, `whq` interacts with the current Git repository only
 
 - Synopsis: `whq version`
 - Description: Prints the CLI version string to stdout. The default build value
-  is `v0.0.2` and can be overridden at build time via
+  is `v0.0.3` and can be overridden at build time via
   `-ldflags "-X main.version=<value>"`.
 - Output: Version string only (no prefix text), with a trailing newline.
 - Errors:

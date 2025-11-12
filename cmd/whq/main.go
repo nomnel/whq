@@ -23,7 +23,7 @@ type whqEnv struct {
 }
 
 var (
-	version = "v0.0.2"
+	version = "v0.0.3"
 
 	rootCmd = &cobra.Command{
 		Use:           "whq",
